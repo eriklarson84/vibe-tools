@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f6f7f2">
+  <title>PaceMate｜跑步配速計算器</title>
+  <style>
+    :root {
+      --bg: #f6f7f2;
+      --card: #ffffff;
+      --ink: #17251f;
+      --muted: #69756f;
+      --line: #e4e9e2;
+      --green: #c9f36a;
+      --green-dark: #31551e;
+      --orange: #ff784f;
+      --soft: #eef2e9;
+      --shadow: 0 12px 35px rgba(27, 48, 35, .06);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .shell { max-width: 1080px; width: calc(100% - 40px); margin: 0 auto; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 25px 0; }
+    .brand { display: flex; gap: 10px; align-items: center; font-weight: 850; letter-spacing: -.6px; font-size: 1.2rem; }
+    .brand-mark { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 12px; background: var(--green); color: #22351a; font-size: 19px; }
+    .top-tag { color: var(--muted); font-size: .85rem; }
+    .hero { padding: 35px 0 28px; display: grid; grid-template-columns: 1.2fr .8fr; align-items: end; gap: 28px; }
+    .eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: .75rem; font-weight: 800; color: #58733f; }
+    h1 { font-size: clamp(2.4rem, 5vw, 4.1rem); line-height: 1.04; letter-spacing: -2.8px; margin: 13px 0 17px; }
+    h1 span { color: #718c43; }
+    .hero p { color: var(--muted); max-width: 510px; margin: 0; }
+    .hero-note { justify-self: end; display: flex; align-items: center; gap: 14px; max-width: 260px; padding: 17px; border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.58); }
+    .shoe { font-size: 29px; }
+    .hero-note strong { display: block; font-size: .9rem; }
+    .hero-note small { display: block; color: var(--muted); margin-top: 2px; }
+    .layout { display: grid; grid-template-columns: 1.05fr .95fr; gap: 20px; padding-bottom: 40px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); }
+    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 24px 25px 0; }
+    .card h2 { font-size: 1.1rem; margin: 0; letter-spacing: -.3px; }
+    .sub { color: var(--muted); font-size: .83rem; margin: 5px 0 0; }
+    .form-body { padding: 22px 25px 25px; }
+    .field-label { display: block; font-size: .87rem; font-weight: 750; margin-bottom: 9px; }
+    .distance-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+    .input-wrap { position: relative; }
+    input, select { width: 100%; border: 1px solid #dce3d9; border-radius: 12px; background: #fbfcf9; color: var(--ink); padding: 13px 14px; outline: none; transition: border .15s, box-shadow .15s; }
+    input:focus, select:focus { border-color: #86a64c; box-shadow: 0 0 0 3px rgba(134,166,76,.15); }
+    .unit-select { display: flex; align-items: center; justify-content: center; padding: 0 12px; border-radius: 12px; background: var(--soft); border: 1px solid transparent; font-weight: 750; font-size: .88rem; min-width: 112px; }
+    .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 19px; }
+    .time-grid label { font-size: .82rem; color: var(--muted); display: block; margin-bottom: 7px; }
+    .time-grid input { font-size: 1.05rem; font-weight: 700; }
+    .actions { display: flex; gap: 10px; margin-top: 20px; }
+    .btn { border: 0; border-radius: 12px; padding: 12px 17px; font-weight: 800; transition: transform .15s, filter .15s; }
+    .btn:hover { filter: brightness(.97); transform: translateY(-1px); }
+    .btn-primary { background: var(--green); color: #24361a; flex: 1; }
+    .btn-secondary { background: var(--soft); color: var(--ink); }
+    .sample-row { margin-top: 14px; font-size: .8rem; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .sample { border: 1px solid var(--line); border-radius: 999px; background: #fff; padding: 5px 10px; color: #445148; font-size: .78rem; }
+    .sample:hover { border-color: #9db777; }
+    .error { color: #b33a27; font-size: .82rem; min-height: 20px; margin: 11px 0 0; }
+    .result-card { overflow: hidden; }
+    .result-top { background: #1c2c23; color: white; padding: 25px; position: relative; }
+    .result-top:after { content: "↗"; position: absolute; right: 25px; top: 19px; color: var(--green); font-size: 2rem; font-weight: 300; }
+    .result-label { color: #b8c6ba; font-size: .85rem; }
+    .pace-display { display: flex; align-items: baseline; gap: 8px; margin: 7px 0 0; }
+    .pace-value { font-size: clamp(3rem, 5vw, 4.3rem); font-weight: 850; letter-spacing: -3px; line-height: 1.15; }
+    .pace-unit { color: #c7d3c9; font-size: .92rem; }
+    .result-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 21px; }
+    .stat { border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.06); border-radius: 13px; padding: 12px; }
+    .stat span { display: block; color: #b8c6ba; font-size: .76rem; }
+    .stat strong { display: block; margin-top: 4px; font-size: 1.15rem; }
+    .predictions { padding: 23px 25px 25px; }
+    .predictions h3 { margin: 0; font-size: 1rem; }
+    .prediction-list { margin-top: 15px; display: grid; gap: 10px; }
+    .prediction { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 13px; background: #f7f9f4; }
+    .prediction .race { font-weight: 750; }
+    .prediction small { color: var(--muted); display: block; font-size: .75rem; margin-top: 1px; }
+    .prediction strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
+    .section-title { margin: 8px 0 17px; display: flex; justify-content: space-between; align-items: end; gap: 15px; }
+    .section-title h2 { margin: 0; font-size: 1.35rem; letter-spacing: -.7px; }
+    .section-title p { margin: 4px 0 0; color: var(--muted); font-size: .88rem; }
+    .goal-card { padding: 25px; margin-bottom: 45px; }
+    .goal-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: end; margin-top: 20px; }
+    .goal-grid label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: 7px; }
+    .goal-result { margin-top: 17px; padding: 14px 16px; border-radius: 13px; background: #f0f7e4; color: #344b23; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .goal-result span { font-size: .88rem; }
+    .goal-result strong { font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+    footer { padding: 0 0 28px; text-align: center; color: #7a857d; font-size: .78rem; }
+    @media (max-width: 760px) {
+      .shell { width: calc(100% - 28px); }
+      header { padding: 17px 0; }
+      .top-tag { font-size: .75rem; }
+      .hero { grid-template-columns: 1fr; gap: 20px; padding: 27px 0 22px; }
+      h1 { letter-spacing: -1.8px; }
+      .hero-note { justify-self: stretch; max-width: none; }
+      .layout { grid-template-columns: 1fr; gap: 15px; }
+      .card-head { padding: 21px 20px 0; }
+      .form-body, .predictions { padding: 20px; }
+      .result-top { padding: 23px 20px; }
+      .goal-card { padding: 20px; }
+      .goal-grid { grid-template-columns: 1fr 1fr; }
+      .goal-grid .btn { min-height: 48px; }
+      .section-title { align-items: start; flex-direction: column; }
+    }
+    @media (max-width: 390px) {
+      .time-grid { gap: 8px; }
+      .actions { flex-direction: column; }
+      .goal-grid { grid-template-columns: 1fr; }
+      .goal-result { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><div class="brand-mark">↗</div> PaceMate</div>
+      <div class="top-tag">跑得更聰明，不只是更快。</div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <div class="eyebrow">YOUR RUNNING COMPANION</div>
+        <h1>Find your pace.<br><span>Own your run.</span></h1>
+        <p>輸入距離與時間，快速了解你的平均配速、速度，以及下一場比賽的預估成績。</p>
+      </div>
+      <div class="hero-note">
+        <div class="shoe">🏃</div>
+        <div><strong>每一步都有意義</strong><small>簡單計算，清楚掌握進步。</small></div>
+      </div>
+    </section>
+
+    <main>
+      <div class="layout">
+        <section class="card">
+          <div class="card-head">
+            <div><h2>計算你的跑步配速</h2><p class="sub">輸入一筆跑步紀錄開始計算</p></div>
+          </div>
+          <div class="form-body">
+            <label class="field-label" for="distance">跑步距離</label>
+            <div class="distance-row">
+              <input id="distance" type="number" min="0.01" step="0.01" value="5" inputmode="decimal" aria-label="跑步距離（公里）">
+              <select id="distanceUnit" class="unit-select" aria-label="距離單位">
+                <option value="km">公里 km</option>
+                <option value="mi">英里 mi</option>
+              </select>
+            </div>
+            <div class="time-grid">
+              <div><label for="minutes">花費時間（分鐘）</label><input id="minutes" type="number" min="0" step="1" value="32" inputmode="numeric"></div>
+              <div><label for="seconds">秒數</label><input id="seconds" type="number" min="0" max="59" step="1" value="30" inputmode="numeric"></div>
+            </div>
+            <div class="actions">
+              <button class="btn btn-primary" id="calculate">計算配速 ↗</button>
+              <button class="btn btn-secondary" id="reset">重設</button>
+            </div>
+            <div class="sample-row">
+              <span>快速試算：</span>
+              <button class="sample" data-distance="3" data-minutes="17" data-seconds="45">3 km 輕鬆跑</button>
+              <button class="sample" data-distance="5" data-minutes="28" data-seconds="0">5 km 挑戰</button>
+              <button class="sample" data-distance="10" data-minutes="58" data-seconds="30">10 km 長跑</button>
+            </div>
+            <p class="error" id="error" role="alert" aria-live="polite"></p>
+          </div>
+        </section>
+
+        <section class="card result-card" aria-live="polite">
+          <div class="result-top">
+            <div class="result-label">你的平均配速</div>
+            <div class="pace-display"><div class="pace-value" id="pace">6:30</div><div class="pace-unit">分 / 公里</div></div>
+            <div class="result-stats">
+              <div class="stat"><span>平均速度</span><strong id="speed">9.2 km/h</strong></div>
+              <div class="stat"><span>總跑步時間</span><strong id="totalTime">32:30</strong></div>
+            </div>
+          </div>
+          <div class="predictions">
+            <h3>🏁 依照目前配速預估完賽時間</h3>
+            <div class="prediction-list">
+              <div class="prediction"><div><span class="race">5 公里</span><small>5K</small></div><strong id="pred5">32:30</strong></div>
+              <div class="prediction"><div><span class="race">10 公里</span><small>10K</small></div><strong id="pred10">1:05:00</strong></div>
+              <div class="prediction"><div><span class="race">半程馬拉松</span><small>21.0975K</small></div><strong id="predHalf">2:17:07</strong></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section class="card goal-card">
+        <div class="section-title">
+          <div><h2>設定你的目標配速 🎯</h2><p>輸入比賽距離與目標完賽時間，看看需要多快。</p></div>
+        </div>
+        <div class="goal-grid">
+          <div><label for="raceDistance">比賽距離</label><select id="raceDistance"><option value="5">5 公里</option><option value="10">10 公里</option><option value="21.0975">半程馬拉松</option><option value="42.195">全程馬拉松</option></select></div>
+          <div><label for="goalMinutes">目標時間（分鐘）</label><input id="goalMinutes" type="number" min="1" value="30" inputmode="numeric"></div>
+          <div><label for="goalSeconds">秒數</label><input id="goalSeconds" type="number" min="0" max="59" value="0" inputmode="numeric"></div>
+          <button class="btn btn-primary" id="goalCalculate">計算目標</button>
+        </div>
+        <div class="goal-result" id="goalResult" aria-live="polite">
+          <span>達成目標所需配速</span><strong id="goalPace">6:00 / km</strong>
+        </div>
+      </section>
+    </main>
+    <footer>PaceMate · 跑步配速計算器 · 預估時間僅供參考，實際成績會受路況與體能影響。</footer>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function formatTime(totalSeconds, showHoursWhenNeeded = true) {
+      const rounded = Math.max(0, Math.round(totalSeconds));
+      const hours = Math.floor(rounded / 3600);
+      const minutes = Math.floor((rounded % 3600) / 60);
+      const seconds = rounded % 60;
+      if (hours > 0 || !showHoursWhenNeeded) {
+        return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      }
+      return `${minutes}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    function formatPace(secondsPerKm) {
+      if (!Number.isFinite(secondsPerKm) || secondsPerKm <= 0) return "—";
+      const rounded = Math.round(secondsPerKm);
+      const minutes = Math.floor(rounded / 60);
+      const seconds = rounded % 60;
+      return `${minutes}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    function calculatePace() {
+      const enteredDistance = Number($("distance").value);
+      const unit = $("distanceUnit").value;
+      const distance = enteredDistance * (unit === "mi" ? 1.609344 : 1);
+      const minutes = Number($("minutes").value);
+      const seconds = Number($("seconds").value);
+      const error = $("error");
+
+      if (!Number.isFinite(enteredDistance) || enteredDistance <= 0 ||
+          $("distance").value.trim() === "" ||
+          $("minutes").value.trim() === "" ||
+          $("seconds").value.trim() === "" ||
+          !Number.isFinite(minutes) || minutes < 0 || !Number.isInteger(minutes) ||
+          !Number.isFinite(seconds) || seconds < 0 || seconds > 59 || !Number.isInteger(seconds) ||
+          minutes * 60 + seconds <= 0) {
+        error.textContent = "請輸入有效的距離與時間（距離需大於 0，秒數需介於 0–59）。";
+        return;
+      }
+
+      error.textContent = "";
+      const totalSeconds = minutes * 60 + seconds;
+      const pacePerKm = totalSeconds / distance;
+      const paceInSelectedUnit = totalSeconds / enteredDistance;
+      const speed = enteredDistance / (totalSeconds / 3600);
+      const paceUnitLabel = unit === "mi" ? "分 / 英里" : "分 / 公里";
+      const speedUnitLabel = unit === "mi" ? "mph" : "km/h";
+
+      $("pace").textContent = formatPace(paceInSelectedUnit);
+      document.querySelector(".pace-unit").textContent = paceUnitLabel;
+      $("speed").textContent = `${speed.toFixed(1)} ${speedUnitLabel}`;
+      $("totalTime").textContent = formatTime(totalSeconds);
+      $("pred5").textContent = formatTime(pacePerKm * 5);
+      $("pred10").textContent = formatTime(pacePerKm * 10);
+      $("predHalf").textContent = formatTime(pacePerKm * 21.0975);
+    }
+
+    function calculateGoal() {
+      const distanceKm = Number($("raceDistance").value);
+      const unit = $("distanceUnit").value;
+      const distanceInSelectedUnit = distanceKm / (unit === "mi" ? 1.609344 : 1);
+      const minutes = Number($("goalMinutes").value);
+      const seconds = Number($("goalSeconds").value);
+      const result = $("goalPace");
+
+      if ($("goalMinutes").value.trim() === "" || $("goalSeconds").value.trim() === "" ||
+          !Number.isFinite(minutes) || minutes < 0 || !Number.isInteger(minutes) ||
+          !Number.isFinite(seconds) || seconds < 0 || seconds > 59 || !Number.isInteger(seconds) ||
+          minutes * 60 + seconds <= 0) {
+        result.textContent = "請輸入有效時間";
+        return;
+      }
+      result.textContent = `${formatPace((minutes * 60 + seconds) / distanceInSelectedUnit)} / ${unit === "mi" ? "mi" : "km"}`;
+    }
+
+    $("calculate").addEventListener("click", calculatePace);
+    $("distanceUnit").addEventListener("change", () => {
+      // Preserve the same physical distance when switching between km and miles.
+      const distanceInput = $("distance");
+      const currentDistance = Number(distanceInput.value);
+      if (Number.isFinite(currentDistance) && currentDistance > 0) {
+        const converted = $("distanceUnit").value === "mi"
+          ? currentDistance / 1.609344
+          : currentDistance * 1.609344;
+        distanceInput.value = String(Math.round(converted * 100) / 100);
+      }
+      calculatePace();
+      calculateGoal();
+    });
+    $("reset").addEventListener("click", () => {
+      $("distanceUnit").value = "km";
+      $("distance").value = "5";
+      $("minutes").value = "32";
+      $("seconds").value = "30";
+      $("error").textContent = "";
+      calculatePace();
+      calculateGoal();
+    });
+    document.querySelectorAll(".sample").forEach((button) => {
+      button.addEventListener("click", () => {
+        $("distanceUnit").value = "km";
+        $("distance").value = button.dataset.distance;
+        $("minutes").value = button.dataset.minutes;
+        $("seconds").value = button.dataset.seconds;
+        calculatePace();
+        calculateGoal();
+      });
+    });
+    $("goalCalculate").addEventListener("click", calculateGoal);
+
+    // Calculate immediately so the page always opens with useful results.
+    calculatePace();
+    calculateGoal();
+  </script>
+</body>
+</html>
